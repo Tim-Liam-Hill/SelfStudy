@@ -1,5 +1,7 @@
 # Intro 
 https://github.com/remzi-arpacidusseau/ostep-code/tree/master/intro
+https://pages.cs.wisc.edu/~remzi/OSTEP/Homework/homework.html
+https://pages.cs.wisc.edu/~remzi/OSTEP/
 
 ## Intro 
 
@@ -46,3 +48,53 @@ mechanisms are low-level methods or protocols that implement a needed piece of f
 Time sharing has a disk counterpart -> space sharing. 
 
 Policies are algorithms for making some kind of decision within the OS.
+
+Machine state -what a program can read or update when it is running
+* memory (address space)
+* registers
+
+Policies = high level (answers the question of 'which')
+Mechanisms are low level (answer the question of 'how')
+
+Any OS api should have:
+* create method
+* destroy method 
+* wait
+* misc control
+* status
+
+### Process Creation 
+
+* load code and static data into memory
+* modern OSes load things lazily
+* allocate memory for run-time stack
+
+Each process by default has three open file descriptors for standard Input, output and error
+
+### Process States
+* Running
+* Ready
+* Blocked
+
+
+Process list => keeps track of all running programs in the system. 
+
+## Homework
+
+Its an interesting little program here, not actually interfacing with the underlying OS but instead scheduling things (if my brief scan of the code is correct).
+
+1. Should be 100% CPU usage since there is no chance for either process to make an I/O call. -> correct. 
+2. What happens depends on the nature of the scheduler. I am assuming this will take 4 + 2 cycles (4 instructions + 1 I/O wait + 1 I/O instruction).
+
+I was wrong, mostly because I didn't know how long an I/O process would be blocked for. 
+
+3. Switching order around will lead to far better utilization of CPU: not 100% since
+I/O blocks for 4 instruction cycles and process 2 only does 4, but still, only 1 process 
+cycle will be wasted blocking. -> correct
+
+4. Back to original performance in Q2. -> correct
+5. Back to q 3 behaviour -> correct
+6. The process doing the IO will finish only after all other processes are finished. ->correct
+7. There will be better interleaving of processes and less time blocked. ->correct
+
+## Process API
