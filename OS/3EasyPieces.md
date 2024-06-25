@@ -3,6 +3,10 @@ https://github.com/remzi-arpacidusseau/ostep-code/tree/master/intro
 https://pages.cs.wisc.edu/~remzi/OSTEP/Homework/homework.html
 https://pages.cs.wisc.edu/~remzi/OSTEP/
 
+___ 
+## Reading for later
+ * “Advanced Programming in the UNIX Environment” by W. Richard Stevens, Stephen
+
 ## Intro 
 
 Virtualization makes systems easier to use, so the crux of the matter is how does an operating system virtualize resources.
@@ -98,3 +102,60 @@ cycle will be wasted blocking. -> correct
 7. There will be better interleaving of processes and less time blocked. ->correct
 
 ## Process API
+
+### Fork
+
+Creates an almost exact copy of the running program (doesn't restart execution from the top, it resumes from the same place after the call to fork).
+- Child gets a return code of 0 from the fork call
+- parent gets the PID of the new child. 
+
+### Wait 
+
+Sometimes we want the parent to wait for the child before carrying on, that is what 
+wait does for us. 
+
+### Exec 
+
+Lets you run a prgram that is different from the calling program. 
+
+Weird because: 
+* give it the name of an executable and som arguments 
+* it loads code and static data from said executable 
+* overwrites its current code segment and current stack data with the above 
+* heap an dstack and memory space of program get re-initialuzed
+* OS then runs that program passing in arguments as the argv
+
+DOES NOT CREATE A NEW PROCESS -> TRANSFORMS EXISTING PROCESS
+* a successful call to exec never returns
+
+separating fork from exec is important since:
+* it lets us run code after the fork call but before the exec call
+* so we can alter the environment the program will be run in.
+
+THE SHELL IS A USER PROGRAM and it basically:
+* gives you a prompt 
+* creates a fork to run the executable you give
+* runs exec in the child
+* parent runs wait for the original child to finish
+
+Unix systems start looking for free file descriptors at Zero
+
+### Pipe
+
+output of one process is connected to an in-kernel pipe (queue)
+and the input of another process is connected to that same pipe.
+
+
+TODO: look into [bash source code](https://github.com/bminor/bash/blob/master/shell.c)
+
+### Kill
+sends signals to a process
+* control-c sends a SIGINT (interupt)
+* control-z sends a SIGTSTP (stop)
+a process uses ```signal``` system call to catch signals and suspect its normal execution
+
+
+### Homework 
+
+'the initial (OS) process is called init'
+
