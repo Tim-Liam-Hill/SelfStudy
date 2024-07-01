@@ -159,3 +159,6 @@ a process uses ```signal``` system call to catch signals and suspect its normal 
 
 'the initial (OS) process is called init'
 
+For q2 parent always seems to write to file first. They both write to the same file however. 
+
+Q3: could use sockets but I have done that before so let's try something new - shared memory. 
