@@ -162,3 +162,137 @@ a process uses ```signal``` system call to catch signals and suspect its normal 
 For q2 parent always seems to write to file first. They both write to the same file however. 
 
 Q3: could use sockets but I have done that before so let's try something new - shared memory. 
+Something to note about my solution: it seems to result in certain output that is normally only 
+called once being called twice. I suppose thats worth looking into. 
+
+TODO: Finish these exercizes (right now I am lazy)
+
+## Direct Execution
+
+How do we obtain high performance and still maintain control in a timesharing CPU virtualization environment?
+
+#### Direct Execution
+
+Basically just bring the executable into memory, put it into process list and run it directly on the CPU
+Problems 
+* OS isn't in control at all
+
+But it is fast. 
+
+How do we give processes the opportunity to perform I/O and other restricted operations without giving them full control? 
+
+"Thus, the parts of the C library that
+make system calls are hand-coded in assembly, as they need to carefully
+follow convention in order to process arguments and return values correctly"
+
+To solve prev issue we introduce user and kernel mode. Hardware assists OS by providing different modes of execution.  User mode code runs in a restructed mode 
+so couldn't do thing like I/O requests.
+How do we give them this functionality? Via system calls 
+
+system calls -> allow kernel to expose certain functionality 
+
+To execute system call, program must execute a special trap instruction
+trap basically 
+- elevates to kernel mode
+- kernel checks if can perform
+- if can then we do the work
+- once done, return from trap returns control to calling program
+
+OS NEEDS TO KEEP TRACK OF WHICH CODE TO RUN IN KERNEL MODE AND WHICH CODE TO JUMP BACK TO
+- if you don't, user can jump around to arbitrary code locations and basically do what they want
+
+Kernel sets up a trap table at boot time 
+- machine boot up takes place in kernel mode
+- OS tells hardware what code to run when certain exceptional events occur (eg: keyboard interrrupt)
+this kind of explains why some config changes (eg: remap keys on keyboard) require a reboot to take effect. 
+- also gives location of trap handlers 
+
+We use system-call numbers which map a number to a unique system call
+- Prevents users from having to specify locations in memory (which is unsafe, and this is easier anyway)
+
+"Point to ponder: what horrible things could you do to a system if you
+could install your own trap table? Could you take over the machine?"
+
+You could completely brick the system by mapping silly calls to certain events(eg, open file on harddrive 
+when a key is pressed). You could likely also confuse the system since, if the OS does its checking 
+based on the system-call number and not the otherside (actual function being called by hardware) then 
+you can exploit the system by calling a system-call nmber you are allowed to do normally but that maps to 
+a forbieedn function on hardware (issue you would have is whether or not the OS passes all the 
+arguments correctly)
+
+This is 
+#### Limited Direct Execution 
+
+2 phases 
+
+* at boot, kernel initializes trap table 
+* cpu remembers this location for later 
+
+second 
+* when a proces is running and calls a system call
+* kernel allocates a node to a process list, allocates memory and issues trap and return-from-trap instructions as necessary. 
+
+
+but we have a problem, how do we switch between processes? 
+
+if process is running on the CPU then by definition the OS is not running, so it can't interrupt the 
+process now can it. How can the OS regain control? 
+
+#### Cooperative Approach
+
+OS trusts processes to run responsibly and processes that run for too long are assumed to periodically give 
+up CPU so OS can run other tasks.
+
+Obviously this isn't the most practical approach. What happens if a process doesn't play nice 
+or gets stuck in an infinite loop?
+
+#### Non-Cooperative Approach
+
+OS needs help from hardware. 
+
+"A timer device can be programmed to raise an interrupt every
+so many milliseconds; when the interrupt is raised, the currently running
+process is halted, and a pre-configured interrupt handler in the OS runs.
+At this point, the OS has regained control of the CPU, and thus can do
+what it pleases: stop the current process, and start a different one."
+
+At boot, OS tells hardware what instruction to run when interrupt is raised, and it 
+also starts the timer. Starting timer is obviously a privileged instruction since,
+if it wasn't, an offending program could prevent the interrupt from ever taking place. 
+
+
+One thing that is the same regardless whether process returns via system call or is interrupted
+by OS is we need to save and restore its context. Are we going to continue running this process 
+and switch to another is important. 
+
+Context switch -OS will save registers onto its kernel stack and restore values of next 
+   process from kernel stack. 
+
+#### Concurrency
+
+What if an interrupt occurs while you are already handling an interrupt? 
+Concurrency mechanims need to come into play. 
+
+"In an analogous manner, the OS “baby proofs” the CPU, by first (during boot time) setting up the trap handlers and starting an interrupt timer,
+and then by only running processes in a restricted mode."
+
+TODO: Homework
+
+## CPU Scheduling 
+
+We need a scheduling metric 
+
+Tturnaround = Tcompletion − Tarrival 
+
+This is a performance metric BUT we also need to consider fairness. 
+
+### FIFO 
+
+Good for when first jobs are fastest, bad when first jobs are longest.
+Convoy effect ->  a number of relatively-short potential consumers of a resource get queued behind a heavyweight resource consumer
+
+### Shortest Job First 
+
+
+This is great, except for when the longest job arrives first (no interrupts).
+Also, potential starvation (if I am correct)
