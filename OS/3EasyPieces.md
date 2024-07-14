@@ -298,6 +298,171 @@ This is great, except for when the longest job arrives first (no interrupts).
 Also, potential starvation (if I am correct)
 
 
-### Shortest Time TO Completion First (STCF)
+### Shortest Time To Completion First (STCF)
 
-We add in the idea of preempting a job -> 
+We add in the idea of preempting a job -> if current job running will take longer than a new job coming in, it is more
+efficient to run the new job (preempt the old job)
+If only we always knew how long a job would take to run to completion
+
+### Round Robin  (Response time) 
+
+now we have users that want snappy responses
+
+"We define response time as the time from when the job arrives in a
+system to the first time it is scheduled3
+. More formally:
+Tresponse = Tf irstrun − Tarrival "
+
+instead of running jobs to completion, RR runs a job for a
+time slice (sometimes called a scheduling quantum) and then switches
+to the next job in the run queue.
+
+TIME OF SLICE MUST BE MULTIPLE OF INTERRUPT TIMER (because that is the level of granularity 
+that is enforced, any time following between gets rounded up anyway in practice)
+
+Short time slice -> better response, worse overhead for switching (and so on)
+
+More generally, any policy (such as RR) that is fair, i.e., that evenly divides the CPU among active processes on a small time scale, will perform
+poorly on metrics such as turnaround time.
+
+The general technique of amortization is commonly used in systems
+when there is a fixed cost to some operation. By incurring that cost less
+often (i.e., by performing the operation fewer times), the total cost to the
+system is reduced.
+
+### Incorporatingh I/O
+
+To get performance boost, interleave operations so that while we wait on I/O we get something else done.
+Split I/O intensive jobs into 'sub-jobs'
+
+But this whole time we have been assuming we know time to completion for each job, which is not necessarily 
+the real world case. So we use multi-level feedback queue -> use the past performance to predict the future.
+
+Something I am thinking of is how is prioritization of processes taking place here? In terms of niceness (Linux) 
+etc? Current scheduling algorithm approaches here don't discuss this (maybe in next section it will).
+
+
+### HOMEWORK 
+
+Maybe another time. 
+
+## MultiLevel Feedback.
+
+
+The Multi-level Feedback Queue (MLFQ) scheduler was first described by Corbato et al.
+
+Aims:
+1. To optimize turnaround time 
+2. system responsiveness
+
+* we have a number of distinct queues 
+* each queue has its own priority
+* each job on only one queue 
+* can have multiple jobs in a single queue
+* higher prio queues jobs first
+* RoundRobin for processes inside queue 
+
+How we set priorities is important 
+
+"Rather than giving a fixed priority to each job, MLFQ varies
+the priority of a job based on its observed behavior. If, for example, a job
+repeatedly relinquishes the CPU while waiting for input from the keyboard, MLFQ will keep its priority high, as this is how an interactive
+process might behave. If, instead, a job uses the CPU intensively for long
+periods of time, MLFQ will reduce its priority."
+
+### How does priority change
+
+Assumption: we have short jobs where response time is important and long jobs where turnaround time is more important 
+
+The allotment is the amount of time a job can spend at a given priority
+level before the scheduler reduces its priority. For simplicity, at first, we
+will assume the allotment is equal to a single time slice.
+
+• Rule 3: When a job enters the system, it is placed at the highest
+priority (the topmost queue).
+• Rule 4a: If a job uses up its allotment while running, its priority is
+reduced (i.e., it moves down one queue).
+• Rule 4b: If a job gives up the CPU (for example, by performing
+an I/O operation) before the allotment is up, it stays at the same
+priority level (i.e., its allotment is reset).
+
+Basically, when a new job comes in, we assume it will be a short running job. 
+
+if job does I/O, it will naturally give up CPU time while waiting for said I/O
+
+### Problems 
+
+* starvation 
+* maliciously gaming the scheduler 
+* programs change behaviour over time
+
+Rule 5: After some time period S, move all the jobs in the system
+to the topmost queue.
+
+Choosing S is not trivial.
+"As you can imagine, these are often left unmodified,
+and thus we are left to hope that the defaults work well in the field. This
+tip brought to you by our old OS professor, John Ousterhout, and hence
+we call it Ousterhout’s Law."
+
+I think fig 8.4 might be mistaken: on the right, we would expext the long 
+running job to move down in prio again since it is using up entire allotment 
+when in top of queue 
+
+To stop malicious gaming:
+
+ Rule 4: Once a job uses up its time allotment at a given level (regardless of how many times it has given up the CPU), its priority is
+reduced (i.e., it moves down one queue).
+
+### Tuning 
+
+* How many queues?
+* how large time slice?
+* how often prio boost 
+
+most MLFQ variants allow for varying time-slice length
+across different queues. The high-priority queues are usually given short
+time slices; they are comprised of interactive jobs, after all
+
+"See Epema’s paper for an excellent overview of such decay-usage
+algorithms and their properties [E95]."
+
+We have only really looked in terms of a single processer, what about multi processer?
+How does this all fit in with multithreading? 
+
+" some schedulers reserve the highest priority levels
+for operating system work"
+
+### Homework
+
+:3 
+
+## Lottery Scheduling (Proportional share)
+
+How can we design a scheduler to share the CPU in a proportional
+manner?
+
+### Tickets 
+
+a ticket represents the share of a resource that a process should recieve
+Lottery scheduling achieves proportional sharing probabilistically but not 
+deterministically 
+
+"Second, random also is lightweight, requiring little state to track alternatives. In a traditional fair-share scheduling algorithm, tracking how
+much CPU each process has received requires per-process accounting,
+which must be updated after running each process. Doing so randomly
+necessitates only the most minimal of per-process state (e.g., the number
+of tickets each has)."
+
+SIDE TANGENT ON RANDOMNESS: 
+- /dev/random and /dev/urandom are special files that serve as cryptographically secure pseudorandom number generators
+urandom is non-blocking so technically less entropy (not an issue unless an attack is found in which case use /dev/random)
+
+Randomness is quite strange 
+
+QUESTION: how do we efficiently conduct the lottery? 
+
+* ticket currency (processes have their own internal ticket currency that is then converted into global currency when comparing)
+* ticket transfer (one process gives another its tickets)
+* ticket inflation (useful when all processes trust each other to behave)
+
