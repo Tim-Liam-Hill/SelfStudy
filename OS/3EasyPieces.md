@@ -296,3 +296,8 @@ Convoy effect ->  a number of relatively-short potential consumers of a resource
 
 This is great, except for when the longest job arrives first (no interrupts).
 Also, potential starvation (if I am correct)
+
+
+### Shortest Time TO Completion First (STCF)
+
+We add in the idea of preempting a job -> 
