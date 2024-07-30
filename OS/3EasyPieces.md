@@ -466,3 +466,58 @@ QUESTION: how do we efficiently conduct the lottery?
 * ticket transfer (one process gives another its tickets)
 * ticket inflation (useful when all processes trust each other to behave)
 
+
+How do we assign tickets to jobs in the first place? 
+
+### Stride Scheduling 
+
+* each job in the system has a stride which is inversely proportional to the number of tickets it has
+* every time a process runs, increment a pass value by its stride to track global progress
+* pick process with lowest pass value to schedule next job
+
+stride scheduling gets proportions right at the end of a scheduling cycle
+
+Downsides (compared to lottery):
+* need to maintain a global state
+* what if new process joins halfway through?
+
+### Linux completely fair scheduler
+
+goal: fairly divide a CPU evenly among all competing processes
+BUT: reduce amount of time spent scheduling (since if CPU spends a fair amount of time scheduling, then 
+you lose out on efficiency)
+
+virtual runtime = vruntime
+* as a process runs, it accumulates vruntime
+* it increases propotional to physical time
+* when choosing next process, choose one with lowest vruntime
+
+sched_latency: determines how long one process should run before considering a switch (ie: dynamic timeslices)
+
+"CFS divides this value by the number (n) of processes
+running on the CPU to determine the time slice for a process, and thus
+ensures that over this period of time, CFS will be completely fair."
+
+min_granularity: CFS will never set the time slice to lower than this to avoid switching too much.
+
+Note that CFS utilizes a periodic timer interrupt, which means it can
+only make decisions at fixed time intervals.
+
+
+### Niceness
+
+One smart aspect of the construction of the table of weights above is
+that the table preserves CPU proportionality ratios when the difference in
+nice values is constant. For example, if process A instead had a nice value
+of 5 (not -5), and process B had a nice value of 10 (not 0), CFS would
+schedule them in exactly the same manner as before. Run through the
+math yourself to see why
+
+### RedBlack trees
+
+CFS uses this to be efficient
+Only store running/runnable process in the tree
+
+### I/O and sleeping
+
+if a job has been sleeping and wakes up, set its vruntime to lowest value in tree.
