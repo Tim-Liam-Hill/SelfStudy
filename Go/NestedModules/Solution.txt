@@ -1,0 +1,9 @@
+
+GOAL:
+
+- Figure out how to do imports locally
+- Figure out how to do modules within modules 
+
+
+
+go mod edit -replace example.com/entry=../
