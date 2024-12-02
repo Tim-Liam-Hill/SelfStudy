@@ -64,3 +64,10 @@ MADE IT UP TO Question 4 (need to do that)
 17. What is a shell? 
 
 18. Describe the following: Real Mode, Unreal Mode, Protected Mode, and Long Mode.
+
+19. Why is POSIX so important?
+
+POSIX defines a minimal system call interface that conformant UNIX systems must support (ie: allows you to know that a program you write on one system will run fine on 
+another system if both are POSIX compatible).
+
+20. What is a windowing system? What does it do? 
